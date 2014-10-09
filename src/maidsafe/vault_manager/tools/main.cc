@@ -38,17 +38,7 @@ int main(int argc, char* argv[]) {
     for (;;) {
       local_network_controller.current_command->PrintTitle();
       local_network_controller.current_command->GetChoice();
-      try {
-        local_network_controller.current_command->HandleChoice();
-      }
-      catch (const maidsafe::maidsafe_error& error) {
-        // A quit request asking for a delay interval between destruction of vaults
-        if (error.code() == maidsafe::make_error_code(maidsafe::VaultManagerErrors::timed_out)) {
-          local_network_controller.vault_manager->TearDownWithInterval();
-          return 0;
-        }
-        throw;
-      }
+      local_network_controller.current_command->HandleChoice();
     }
   }
   catch (const maidsafe::maidsafe_error& error) {

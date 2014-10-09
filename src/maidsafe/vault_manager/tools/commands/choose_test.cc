@@ -31,26 +31,19 @@ namespace tools {
 
 ChooseTest::ChooseTest(LocalNetworkController* local_network_controller)
     : Command(local_network_controller, "Test options.",
-              "\nUnimplemented as yet. "
-              "(type 100 for quit or 101 for tear down vaults with interval)\n",
+              "\nUnimplemented as yet.\n",
               "Main Test Choices"),
       choice_(0) {}
 
 void ChooseTest::GetChoice() {
   TLOG(kYellow) << kInstructions_;
-  while (!DoGetChoice(choice_, static_cast<int*>(nullptr), 100, 101)) {
+  while (!DoGetChoice(choice_, static_cast<int*>(nullptr), 1, 2))
     TLOG(kDefaultColour) << '\n' << kInstructions_;
-  }
 }
 
 void ChooseTest::HandleChoice() {
   local_network_controller_->current_command =
       maidsafe::make_unique<ChooseTest>(local_network_controller_);
-  // Throwing an error to indicate a quit request
-  if (choice_ == 101)
-    BOOST_THROW_EXCEPTION(MakeError(VaultManagerErrors::timed_out));
-  if (choice_ == 100)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::success));
 }
 
 }  // namespace tools
