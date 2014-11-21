@@ -102,6 +102,11 @@ VaultManager::VaultManager()
   if (vaults.empty()) {
 #ifndef TESTING
     VaultInfo vault_info;
+#ifdef USE_VLOGGING
+    // hard-code vlog session ID for testing; don't commit to next!
+    vault_info.vlog_session_id = "34994d76-2c00-4971-c233-80b912231285";
+    vault_info.send_hostname_to_visualiser_server = true;
+#endif
     vault_info.pmid_and_signer =
         std::make_shared<passport::PmidAndSigner>(passport::CreatePmidAndSigner());
     // Trying infinitely to put PmidAndSigner for new Vault

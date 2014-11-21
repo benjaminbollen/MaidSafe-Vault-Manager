@@ -211,26 +211,46 @@ class PublicPmidStorer {
   }
 
   void Store() {
-    size_t failures(0);
+    size_t failuresPut(0);
+    size_t failuresGet(0);
     std::vector<passport::PublicPmid> public_pmids{ GetPublicPmids() };  // From test environment
     for (const auto& public_pmid : public_pmids) {
       try {
         client_nfs_->Put(public_pmid).get();
+        TLOG(kGreen) << "Successfully stored public key of Pmid " << DebugId(public_pmid.name()) << '\n';
+      }
+      catch (const std::exception& e) {
+        ++failuresPut;
+        TLOG(kRed) << "Failed storing public key of Pmid " << DebugId(public_pmid.name())
+                   << ": " << boost::diagnostic_information(e) << '\n';
+      }
+    }
+
+    for (const auto& public_pmid : public_pmids) {
+      try {
         auto pmid_future(client_nfs_->Get(public_pmid.name()));
         if (!EqualKeys(public_pmid, pmid_future.get()))
           BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
-        LOG(kInfo) << "Pmid " << DebugId(public_pmid.name()) << " public key stored & verified";
+        TLOG(kGreen) << "Pmid " << DebugId(public_pmid.name()) << " public key stored & verified. \n";
       }
       catch (const std::exception& e) {
-        TLOG(kRed) << "Failed storing public key of Pmid " << DebugId(public_pmid.name())
-                   << ": " << boost::diagnostic_information(e) << '\n';
-        ++failures;
+        ++failuresGet;
+        TLOG(kRed) << "Failed to verify storing public key of Pmid " << DebugId(public_pmid.name())
+                       << ": " << boost::diagnostic_information(e) << '\n';
       }
     }
-    if (failures) {
-      TLOG(kRed) << "Could not store " << std::to_string(failures) << " out of "
-                 << std::to_string(public_pmids.size()) << '\n';
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+
+    if (failuresPut || failuresGet) {
+      try {
+        TLOG(kRed) << "Could not store " << std::to_string(failuresPut) << " out of "
+                   << std::to_string(public_pmids.size()) << '\n';
+        TLOG(kRed) << "Could not retrieve " << std::to_string(failuresGet) << " out of "
+                   << std::to_string(public_pmids.size()) << '\n';
+        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+      }
+      catch (std::exception& e) {
+        TLOG(kRed) << "ERROR suppressed from PMID Store() Unsuccessful:" << boost::diagnostic_information(e) << '\n';
+      }
     }
   }
 
