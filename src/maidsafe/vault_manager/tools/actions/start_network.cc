@@ -192,7 +192,7 @@ void StartRemainingVaults(LocalNetworkController* local_network_controller, Disk
     auto vault_future(StartVault(local_network_controller,
         local_network_controller->test_env_root_dir / vault_dir_name, max_usage, i));
     vault_future.get();
-    Sleep(std::chrono::milliseconds(500));
+    Sleep(std::chrono::seconds(5));
   }
 }
 
@@ -286,7 +286,7 @@ void StartNetwork(LocalNetworkController* local_network_controller) {
   StartRemainingVaults(local_network_controller, max_usage);
   TLOG(kDefaultColour) << "Started Network of " << local_network_controller->vault_count
                        << " Vaults - waiting for network to stabilise\n";
-  Sleep(std::chrono::seconds(local_network_controller->vault_count / 2));
+  Sleep(std::chrono::seconds(local_network_controller->vault_count * 2));
 
   TLOG(kDefaultColour) << "Storing PublicPmid keys (this may take a while)\n";
   {
