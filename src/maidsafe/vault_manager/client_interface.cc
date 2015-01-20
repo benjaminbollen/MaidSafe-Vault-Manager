@@ -70,7 +70,9 @@ ClientInterface::ClientInterface(const passport::Maid& maid)
 
 ClientInterface::~ClientInterface() {
   // Ensure promise is set if required.
+#ifdef TESTING
   HandleNetworkStableResponse();
+#endif
 }
 
 std::shared_ptr<tcp::Connection> ClientInterface::ConnectToVaultManager() {
@@ -126,8 +128,8 @@ std::future<std::unique_ptr<passport::PmidAndSigner>> ClientInterface::AddVaultR
   LOG(kVerbose) << "ClientInterface::AddVaultRequest : " << label.string();
   std::shared_ptr<VaultRequest> request(std::make_shared<VaultRequest>(asio_service_.service(),
                                                                        std::chrono::seconds(30)));
-  request->timer.async_wait([request, label, this](const boost::system::error_code& ec) {
-    if (ec && ec == boost::asio::error::operation_aborted) {
+  request->timer.async_wait([request, label, this](const std::error_code& ec) {
+    if (ec && ec == asio::error::operation_aborted) {
       LOG(kVerbose) << "Timer cancelled. OK";
       return;
     }
@@ -157,9 +159,11 @@ void ClientInterface::HandleReceivedMessage(const std::string& wrapped_message) 
       case MessageType::kVaultRunningResponse:
         HandleVaultRunningResponse(message_and_type.first);
         break;
+#ifdef TESTING
       case MessageType::kNetworkStableResponse:
         HandleNetworkStableResponse();
         break;
+#endif
       case MessageType::kLogMessage:
         HandleLogMessage(message_and_type.first);
         break;
@@ -205,9 +209,11 @@ void ClientInterface::HandleVaultRunningResponse(const std::string& message) {
   }
 }
 
+#ifdef TESTING
 void ClientInterface::HandleNetworkStableResponse() {
   std::call_once(network_stable_flag_, [&] { network_stable_.set_value(); });
 }
+#endif
 
 void ClientInterface::InvokeCallBack(const std::string& message,
                                      std::function<void(std::string)>& callback) {
